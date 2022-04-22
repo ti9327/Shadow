@@ -102,6 +102,11 @@ int motorControllerBaudRate = 9600; // Set the baud rate for the Syren motor con
 //#define EXTRA_SOUNDS
 
 // ---------------------------------------------------------------------------------------
+//                          Utility Arm Settings
+// ---------------------------------------------------------------------------------------
+boolean isUtilArmOpen = false;
+
+// ---------------------------------------------------------------------------------------
 //                          Libraries
 // ---------------------------------------------------------------------------------------
 #include <PS3BT.h>
@@ -114,6 +119,11 @@ int motorControllerBaudRate = 9600; // Set the baud rate for the Syren motor con
 #include <Sabertooth.h>
 #include <Servo.h>
 #include <LedControl.h>
+#include <PololuMaestro.h> // added the Maestro libray
+#include <SoftwareSerial.h>
+SoftwareSerial maestroSerial(9, 10); //tx pin 10
+MiniMaestro maestro(Serial3); //create "maestrobody as the maestro object for the body on Serial 3
+MiniMaestro maestrohead(maestroSerial); //create "maestrobody as the maestro object for the head on Software Serial
 
 //This is the traditional sound controler that has been used with PADAWAN
 #include <MP3Trigger.h>
@@ -224,11 +234,10 @@ void setup()
     //       If you have a 2x12, 2x25 V2, 2x60 or SyRen 50, you can remove
     //       the autobaud line and save yourself two seconds of startup delay.  
 
+    Serial3.begin(9600); //start serial3 for the body Maestro
+    maestroSerial.begin(9600); 
+
     trigger.play(1);
-//    #ifdef SHADOW_DEBUG
-//      output += "\r\nCurrent Volume setting: ";
-//      output += vol;
-//    #endif
 }
 
 boolean readUSB()
@@ -275,6 +284,7 @@ void loop()
     automateDome();
     domeDrive();
 
+    utilityArms();
     toggleSettings();
     soundControl();
     flushAndroidTerminal();
@@ -904,6 +914,41 @@ void rotateDome(int domeRotationSpeed, String mesg)
       SyR->motor(domeRotationSpeed);
     }
 }
+
+void ps3utilityArms(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1)
+{
+  if (!(myPS3->getButtonPress(L1)||myPS3->getButtonPress(L2)||myPS3->getButtonPress(PS)))
+  {
+    if(myPS3->getButtonClick(CROSS))
+    {
+        #ifdef SHADOW_DEBUG
+          output += "Opening/Closing utility arm\r\n";
+        #endif
+          
+        if(isUtilArmOpen == false){
+          maestro.restartScript(3);
+          isUtilArmOpen = true;
+        } else {
+          maestro.restartScript(0);
+          isUtilArmOpen = false;
+        }
+    }
+    if(myPS3->getButtonClick(CIRCLE))
+    {
+        #ifdef SHADOW_DEBUG
+          output += "Wave utility arm\r\n";
+        #endif
+          
+          maestro.restartScript(4);
+    }
+  }
+}
+
+void utilityArms()
+{
+  if (PS3Nav->PS3NavigationConnected) ps3utilityArms(PS3Nav,1);
+  if (PS3Nav2->PS3NavigationConnected) ps3utilityArms(PS3Nav2,2);
+}
  
 void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 {
@@ -946,7 +991,7 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
           domeTargetPosition = 0;
           SyR->stop();
           action = 0;
-          trigger.play(66);
+          //trigger.play(66);
         }
         else
         {
@@ -961,10 +1006,11 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
     if(myPS3->getButtonPress(L2)&&myPS3->getButtonClick(CIRCLE))
     {
         #ifdef SHADOW_DEBUG
-          output += "Play Random Blaster Sounds.\r\n";
+          output += "Run Head Arm wave.\r\n";
         #endif
-		    // Play Random Blaster Sound
-        trigger.play(random(69,76));
+		    // Run Head Arm wave
+        maestrohead.restartScript(0);
+        trigger.play(18);
 	}
 }
 
@@ -1000,16 +1046,16 @@ void processSoundCommand(char soundCommand)
             output += " - Play Random Grumpy\r\n";
           #endif
           //Play Random Sentence
-          trigger.play(random(2,7));  
+          trigger.play(random(2,9));  
           break;
         case '2':   
           #ifdef SHADOW_DEBUG    
             output += "Sound Button ";
             output += soundCommand;
-            output += " - Play OkayOkay.\r\n";
+            output += " - Play OkayFollowMe.\r\n";
           #endif        
-          // Play Play Annoyed
-          trigger.play(7);
+          // Play OkayFollowMe
+          trigger.play(10);
           break;
         case '3':    
           #ifdef SHADOW_DEBUG    
@@ -1018,25 +1064,26 @@ void processSoundCommand(char soundCommand)
             output += " - Play Yes\r\n";
           #endif        
           //Play Doo Doo
-          trigger.play(9);
+          trigger.play(13);
           break;
         case '4':    
           #ifdef SHADOW_DEBUG    
             output += "Sound Button ";
             output += soundCommand;
-            output += " - Play Annoying\r\n";
+            output += " - Play Snicker\r\n";
+            maestro.restartScript(1);
           #endif        
-          //Play Chortle
-          trigger.play(10);
+          //Play Snicker
+          trigger.play(27);
           break;
         case '5':    
           #ifdef SHADOW_DEBUG    
             output += "Sound Button ";
             output += soundCommand;
-            output += " - Play Chstty.\r\n";
+            output += " - Play Random Chstty.\r\n";
           #endif        
-          // Play Random Misc
-          trigger.play(random(17,22));
+          // Play Random Chatty
+          trigger.play(random(19,25));
           break;
         case '6':    
           #ifdef SHADOW_DEBUG    
@@ -1045,24 +1092,24 @@ void processSoundCommand(char soundCommand)
             output += " - Play Tada.\r\n";
           #endif   
           //Play Random OOH.     
-          trigger.play(16);
+          trigger.play(18);
           break;
         case '7':    
           #ifdef SHADOW_DEBUG    
             output += "Sound Button ";
             output += soundCommand;
-            output += " - Play Snicker.\r\n";
+            output += " - Play Cantina Song.\r\n";
           #endif        
           //Play Cantina Song
-          trigger.play(27);
+          trigger.play(32);
           break;
         case '8':
             #ifdef SHADOW_DEBUG    
               output += "Sound Button ";
               output += soundCommand;
-              output += " - Play IStar Wars Themeh.\r\n";
+              output += " - Play Star Wars Theme.\r\n";
             #endif
-            //Play Imperial March
+            //Play Star Wars Theme
             trigger.play(29);
         break;
         default:
@@ -1083,13 +1130,22 @@ void ps3soundControl(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1)
     else if (myPS3->getButtonClick(DOWN))   processSoundCommand('3');    
     else if (myPS3->getButtonClick(LEFT))   processSoundCommand('4');    
   } 
-        else if (myPS3->getButtonPress(L2))
+  else if (myPS3->getButtonPress(L2))
   {
     if (myPS3->getButtonClick(UP))          processSoundCommand('5');    
     else if (myPS3->getButtonClick(RIGHT))  processSoundCommand('6');    
     else if (myPS3->getButtonClick(DOWN))   processSoundCommand('7');    
     else if (myPS3->getButtonClick(LEFT))   processSoundCommand('8');    
-  } 
+  }
+  else if (myPS3->getButtonPress(L1))
+  {
+    if (myPS3->getButtonClick(UP))          processSoundCommand('9');    
+    else if (myPS3->getButtonClick(RIGHT))  processSoundCommand('0');    
+    else if (myPS3->getButtonClick(DOWN))   processSoundCommand('A');    
+    else if (myPS3->getButtonClick(LEFT))   processSoundCommand('C');
+    else if (myPS3->getButtonClick(CROSS))  processSoundCommand('+');
+    else if (myPS3->getButtonClick(CIRCLE)) processSoundCommand('-');
+  }  
 } 
 
 void footMotorDrive()
@@ -1140,7 +1196,6 @@ void soundControl()
    if (PS3Nav->PS3NavigationConnected) ps3soundControl(PS3Nav,1);
    if (PS3Nav2->PS3NavigationConnected) ps3soundControl(PS3Nav2,2);
 }  
-
 
 #ifdef TEST_CONROLLER
 void testPS3Controller(PS3BT* myPS3 = PS3Nav)
