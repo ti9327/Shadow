@@ -107,11 +107,17 @@ int motorControllerBaudRate = 9600; // Set the baud rate for the Syren motor con
 
 //Utility Arm Contribution by Dave C.
 //TODO:  Move PINS to upper part of Mega for Shield purposes
-const int UTILITY_ARM_TOP_PIN   = 9;
-const int UTILITY_ARM_BOTTOM_PIN  = 10;
+const int UTILITY_ARM_TOP_PIN   = 10;
+const int UTILITY_ARM_BOTTOM_PIN  = 11;
 
 int utilArmClosedPos = 0;    // variable to store the servo closed position 
 int utilArmOpenPos = 140;    // variable to store the servo Opened position 
+
+int utilArmTopClosedPos = 90;    // variable to store the servo closed position 
+int utilArmTopOpenPos = 0;    // variable to store the servo Opened position 
+
+int utilArmBottomClosedPos = 140;    // variable to store the servo closed position
+int utilArmBottomOpenPos = 0;    // variable to store the servo Opened positio
 
 // Check value, open = true, closed = false
 boolean isUtilArmTopOpen = false;    
@@ -1390,17 +1396,32 @@ void soundControl()
    if (PS3Nav2->PS3NavigationConnected) ps3soundControl(PS3Nav2,2);
 }  
 
-
-void openUtilArm(int arm, int position = utilArmOpenPos)
+void openUtilArm(int arm)
 {
-    //When passed a position - this can "partially" open the arms.
-    //Great for more interaction
-    moveUtilArm(arm, utilArmOpenPos);
+  //When passed a position - this can "partially" open the arms.
+  //Great for more interaction
+  switch (arm)
+  {
+    case UTIL_ARM_TOP:
+      moveUtilArm(arm, utilArmTopOpenPos);
+      break;
+    case UTIL_ARM_BOTTOM:
+      moveUtilArm(arm, utilArmBottomOpenPos);
+      break;
+  }
 }
 
 void closeUtilArm(int arm)
 {
-    moveUtilArm(arm, utilArmClosedPos);
+  switch (arm)
+  {
+    case UTIL_ARM_TOP:
+      moveUtilArm(arm, utilArmTopClosedPos);
+      break;
+    case UTIL_ARM_BOTTOM:
+      moveUtilArm(arm, utilArmBottomClosedPos);
+      break;
+  } 
 }
 
 void waveUtilArm(int arm)
@@ -1430,7 +1451,7 @@ void moveUtilArm(int arm, int position)
     {
       case UTIL_ARM_TOP:
         UtilArmTopServo.write(position);
-        if ( position == utilArmClosedPos)
+        if ( position == utilArmTopClosedPos)
         {
           isUtilArmTopOpen = false;
         } else
@@ -1440,7 +1461,7 @@ void moveUtilArm(int arm, int position)
         break;
       case UTIL_ARM_BOTTOM:  
         UtilArmBottomServo.write(position);
-        if ( position == utilArmClosedPos)
+        if ( position == utilArmBottomClosedPos)
         {
           isUtilArmBottomOpen = false;
         } else
@@ -1450,6 +1471,67 @@ void moveUtilArm(int arm, int position)
         break;
     }
 }
+
+
+//void openUtilArm(int arm, int position = utilArmOpenPos)
+//{
+//    //When passed a position - this can "partially" open the arms.
+//    //Great for more interaction
+//    moveUtilArm(arm, utilArmOpenPos);
+//}
+//
+//void closeUtilArm(int arm)
+//{
+//    moveUtilArm(arm, utilArmClosedPos);
+//}
+//
+//void waveUtilArm(int arm)
+//{
+//    switch (arm)
+//    {
+//      case UTIL_ARM_TOP:
+//        if(isUtilArmTopOpen == false){
+//          openUtilArm(UTIL_ARM_TOP);
+//        } else {
+//          closeUtilArm(UTIL_ARM_TOP);
+//        }
+//        break;
+//      case UTIL_ARM_BOTTOM:  
+//        if(isUtilArmBottomOpen == false){
+//          openUtilArm(UTIL_ARM_BOTTOM);
+//        } else {
+//          closeUtilArm(UTIL_ARM_BOTTOM);
+//        }
+//        break;
+//    }
+//}
+//
+//void moveUtilArm(int arm, int position)
+//{
+//    switch (arm)
+//    {
+//      case UTIL_ARM_TOP:
+//        UtilArmTopServo.write(position);
+//        if ( position == utilArmClosedPos)
+//        {
+//          isUtilArmTopOpen = false;
+//        } else
+//        {
+//          isUtilArmTopOpen = true;
+//        }
+//        break;
+//      case UTIL_ARM_BOTTOM:  
+//        UtilArmBottomServo.write(position);
+//        if ( position == utilArmClosedPos)
+//        {
+//          isUtilArmBottomOpen = false;
+//        } else
+//        {
+//          isUtilArmBottomOpen = true;
+//        }
+//        break;
+//    }
+//}
 
 // =======================================================================================
 //          Flash Coin Slot LED Function
